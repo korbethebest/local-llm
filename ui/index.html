@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LocalQWEN</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#09090b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="LocalQWEN" />
+  <link rel="apple-touch-icon" href="/icon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #09090b;
+      --s1:       #0f0f12;
+      --s2:       #18181b;
+      --s3:       #27272a;
+      --b1:       #2a2a2f;
+      --b2:       #3f3f46;
+      --text:     #f4f4f5;
+      --dim:      #a1a1aa;
+      --muted:    #71717a;
+      --accent:   #818cf8;
+      --accent2:  #6366f1;
+      --acc-bg:   rgba(99,102,241,0.1);
+      --danger:   #f87171;
+      --green:    #4ade80;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    button, input, textarea, select { font-family: inherit; }
+    button { cursor: pointer; }
+
+    /* ═══════════════════════════════════════
+       VIEWS
+    ═══════════════════════════════════════ */
+    .view { display: none; height: 100vh; }
+    .view.show { display: flex; }
+
+    /* ═══════════════════════════════════════
+       AUTH VIEW
+    ═══════════════════════════════════════ */
+    #authView {
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 28px;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%);
+    }
+
+    .auth-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .auth-mark {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 700; color: #fff;
+      box-shadow: 0 0 40px rgba(99,102,241,0.35), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .auth-name {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .auth-tagline {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: -4px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--s2);
+      border: 1px solid var(--b1);
+      border-radius: 18px;
+      padding: 28px 26px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: var(--s3);
+      border-radius: 9px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 7px 0;
+      background: none;
+      border: none;
+      border-radius: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .tab.active {
+      background: var(--s2);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    }
+
+    .auth-fields { display: flex; flex-direction: column; gap: 11px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--dim);
+      letter-spacing: 0.2px;
+    }
+
+    .field input {
+      background: var(--s3);
+      border: 1px solid var(--b1);
+      border-radius: 9px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .field input:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+
+    .field input::placeholder { color: var(--muted); }
+
+    .auth-err {
+      font-size: 12.5px;
+      color: var(--danger);
+      text-align: center;
+      min-height: 16px;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none;
+      border-radius: 9px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 11px;
+      width: 100%;
+      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+    }
+
+    .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* ═══════════════════════════════════════
+       APP VIEW
+    ═══════════════════════════════════════ */
+    #appView { overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 252px;
+      flex-shrink: 0;
+      background: var(--s1);
+      border-right: 1px solid var(--b1);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .sb-top {
+      padding: 16px 12px 12px;
+      border-bottom: 1px solid var(--b1);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sb-brand {
+      display: flex; align-items: center; gap: 9px;
+      padding: 0 2px;
+    }
+
+    .sb-mark {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+
+    .sb-brand-text { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+
+    .btn-new {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 12px;
+      background: var(--acc-bg);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 9px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-new:hover {
+      background: rgba(99,102,241,0.16);
+      border-color: rgba(99,102,241,0.4);
+    }
+
+    /* Model */
+    .sb-model {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--b1);
+    }
+
+    .sb-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .sb-select {
+      width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--b1);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 12.5px;
+      padding: 6px 9px;
+      outline: none;
+      transition: border-color 0.12s;
+    }
+
+    .sb-select:focus { border-color: var(--accent2); }
+
+    /* History */
+    .sb-hist {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 8px;
+    }
+
+    .hist-head {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      padding: 4px 6px 6px;
+    }
+
+    .hist-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .hist-item:hover { background: var(--s2); }
+    .hist-item:hover .hist-x { opacity: 1; }
+    .hist-item.active { background: var(--s3); }
+
+    .hist-title {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.1s;
+    }
+
+    .hist-item:hover .hist-title,
+    .hist-item.active .hist-title { color: var(--text); }
+
+    .hist-x {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 2px;
+      flex-shrink: 0;
+      transition: color 0.1s, opacity 0.15s;
+    }
+
+    .hist-x:hover { color: var(--danger); }
+
+    /* User bar */
+    .sb-user {
+      padding: 10px 12px;
+      border-top: 1px solid var(--b1);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .sb-avatar {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, #27272a, #3f3f46);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: var(--accent);
+      flex-shrink: 0;
+      border: 1px solid var(--b1);
+    }
+
+    .sb-user-info { flex: 1; min-width: 0; }
+
+    .sb-uname {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .sb-status {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; color: var(--muted);
+    }
+
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+    .dot.on { background: var(--green); }
+
+    .btn-logout {
+      background: none; border: none;
+      color: var(--muted);
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 7px;
+      transition: color 0.12s, background 0.12s;
+      flex-shrink: 0;
+    }
+    .btn-logout:hover { color: var(--text); background: var(--s3); }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Messages */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    .msg-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 32px 16px;
+    }
+
+    /* Welcome screen */
+    .welcome { display: flex; flex-direction: column; }
+
+    .welcome-greeting {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.6px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .welcome-sub {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      font-weight: 300;
+    }
+
+    .welcome-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .welcome-card {
+      background: var(--s2);
+      border: 1px solid var(--b1);
+      border-radius: 13px;
+      padding: 16px 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.12s;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .welcome-card:hover {
+      background: var(--s3);
+      border-color: var(--b2);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .card-hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* Messages */
+    .msg {
+      padding: 22px 0;
+      border-bottom: 1px solid #111114;
+      animation: fadein 0.2s ease;
+    }
+    .msg:last-child { border-bottom: none; }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-head {
+      display: flex; align-items: center; gap: 9px;
+      margin-bottom: 11px;
+    }
+
+    .msg-av {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .msg-av.user {
+      background: var(--s3);
+      border: 1px solid var(--b2);
+      color: var(--accent);
+    }
+
+    .msg-av.assistant {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: #fff;
+    }
+
+    .msg-role {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+    }
+
+    .msg-body { padding-left: 35px; }
+
+    .user-bubble {
+      background: var(--s2);
+      border: 1px solid var(--b1);
+      border-radius: 11px;
+      padding: 11px 15px;
+      font-size: 14.5px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+
+    /* Markdown */
+    .asst-body {
+      font-size: 14.5px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .asst-body p { margin-bottom: 12px; }
+    .asst-body p:last-child { margin-bottom: 0; }
+    .asst-body h1 { font-size: 20px; font-weight: 600; margin: 20px 0 8px; letter-spacing: -0.3px; }
+    .asst-body h2 { font-size: 16px; font-weight: 600; margin: 16px 0 6px; }
+    .asst-body h3 { font-size: 14.5px; font-weight: 600; margin: 12px 0 4px; }
+    .asst-body ul, .asst-body ol { padding-left: 22px; margin-bottom: 12px; }
+    .asst-body li { margin-bottom: 5px; }
+    .asst-body li:last-child { margin-bottom: 0; }
+    .asst-body strong { font-weight: 600; color: var(--text); }
+    .asst-body em { font-style: italic; color: var(--dim); }
+    .asst-body a { color: var(--accent); text-decoration: none; }
+    .asst-body a:hover { text-decoration: underline; }
+    .asst-body blockquote {
+      border-left: 2px solid var(--b2);
+      padding-left: 14px;
+      color: var(--dim);
+      margin: 10px 0;
+      font-style: italic;
+    }
+    .asst-body code {
+      font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 12.5px;
+      background: var(--s3);
+      border: 1px solid var(--b1);
+      border-radius: 5px;
+      padding: 1px 6px;
+      color: #c4b5fd;
+    }
+    .asst-body pre {
+      margin: 12px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--b1);
+    }
+    .asst-body pre code {
+      display: block;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-size: 12.5px;
+      background: #13151a;
+      border: none;
+      border-radius: 0;
+      color: #e6edf3;
+      line-height: 1.65;
+    }
+    .code-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 14px;
+      background: #1a1d24;
+      border-bottom: 1px solid #252930;
+    }
+    .code-lang { font-size: 11px; color: var(--muted); font-family: monospace; letter-spacing: 0.3px; }
+    .btn-copy {
+      background: none; border: none;
+      color: var(--muted); font-size: 11.5px; font-family: inherit;
+      padding: 2px 8px; border-radius: 5px;
+      transition: color 0.1s, background 0.1s;
+    }
+    .btn-copy:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    .asst-body table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+    .asst-body th, .asst-body td {
+      border: 1px solid var(--b1); padding: 8px 12px; text-align: left;
+    }
+    .asst-body th { background: var(--s3); font-weight: 600; }
+    .asst-body tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    /* Thinking animation */
+    .thinking {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); font-size: 13px; padding: 4px 0;
+    }
+    .dots { display: flex; gap: 4px; }
+    .dots span {
+      width: 5px; height: 5px;
+      background: var(--muted); border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%, 80%, 100% { transform: scale(0.55); opacity: 0.3; }
+      40%           { transform: scale(1);    opacity: 1; }
+    }
+
+    /* ── Input ── */
+    .input-area {
+      padding: 10px 32px 22px;
+      max-width: 784px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .input-box {
+      background: var(--s2);
+      border: 1px solid var(--b2);
+      border-radius: 14px;
+      padding: 13px 14px 13px 18px;
+      display: flex; align-items: flex-end; gap: 10px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .input-box:focus-within {
+      border-color: rgba(99,102,241,0.55);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+
+    #userInput {
+      flex: 1;
+      background: none; border: none; outline: none; resize: none;
+      color: var(--text);
+      font-size: 14.5px;
+      line-height: 1.55;
+      min-height: 24px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #userInput::placeholder { color: var(--muted); }
+
+    .btn-send {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+    .btn-send:hover:not(:disabled) { opacity: 0.9; transform: scale(1.06); }
+    .btn-send:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--s3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--b2); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     AUTH VIEW
+═══════════════════════════════ -->
+<div id="authView" class="view show">
+  <div class="auth-brand">
+    <div class="auth-mark">Q</div>
+    <div class="auth-name">LocalQWEN</div>
+    <div class="auth-tagline">프라이빗 로컬 AI 어시스턴트</div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="tab active" onclick="setTab('login')">로그인</button>
+      <button class="tab" onclick="setTab('register')">회원가입</button>
+    </div>
+
+    <form class="auth-fields" onsubmit="submitAuth(event)">
+      <div class="field" id="nameField" style="display:none">
+        <label>이름</label>
+        <input type="text" id="authName" placeholder="홍길동" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label>이메일</label>
+        <input type="email" id="authEmail" placeholder="example@email.com" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="authPw" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <div class="auth-err" id="authErr"></div>
+      <button type="submit" class="btn-submit" id="authBtn">로그인</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     APP VIEW
+═══════════════════════════════ -->
+<div id="appView" class="view">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand">
+        <div class="sb-mark">Q</div>
+        <div class="sb-brand-text">LocalQWEN</div>
+      </div>
+      <button class="btn-new" onclick="newChat()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        새 대화
+      </button>
+    </div>
+
+    <div class="sb-model">
+      <div class="sb-label">모델</div>
+      <select class="sb-select" id="modelSel" onchange="curModel=this.value">
+        <option value="">로딩 중...</option>
+      </select>
+    </div>
+
+    <div class="sb-hist" id="histList">
+      <div class="hist-head">대화 기록</div>
+    </div>
+
+    <div class="sb-user">
+      <div class="sb-avatar" id="userAv">?</div>
+      <div class="sb-user-info">
+        <div class="sb-uname" id="userNameEl">—</div>
+        <div class="sb-status">
+          <div class="dot" id="statusDot"></div>
+          <span id="statusTxt">연결 중...</span>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="로그아웃">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="messages" id="messages">
+      <div class="msg-inner" id="msgInner"></div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <textarea id="userInput" rows="1" placeholder="메시지를 입력하세요..."
+          onkeydown="onKey(event)" oninput="onInput(this)"></textarea>
+        <button class="btn-send" id="sendBtn" onclick="send()" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter 전송 &nbsp;·&nbsp; Shift+Enter 줄바꿈</div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ── State ── */
+let token = localStorage.getItem('lq_token') || '';
+let username = '';
+let curModel = '';
+let curConvId = null;
+let localMsgs = [];
+let streaming = false;
+let authMode = 'login';
+let convList = [];
+
+/* ── Marked ── */
+const mdRenderer = new marked.Renderer();
+mdRenderer.code = (code, lang) => {
+  const hl = (lang && hljs.getLanguage(lang))
+    ? hljs.highlight(code, { language: lang }).value
+    : hljs.highlightAuto(code).value;
+  const raw = code.replace(/`/g, '&#96;').replace(/\\/g, '\\\\');
+  return `<div class="code-bar"><span class="code-lang">${lang || 'text'}</span><button class="btn-copy" onclick="copyCode(this,\`${raw}\`)">복사</button></div><pre><code class="hljs">${hl}</code></pre>`;
+};
+marked.use({ renderer: mdRenderer, breaks: true, gfm: true });
+
+/* ── Bootstrap ── */
+async function init() {
+  if (token) {
+    try {
+      const me = await api('GET', '/auth/me');
+      username = me.username;
+      await enterApp();
+    } catch {
+      token = '';
+      localStorage.removeItem('lq_token');
+    }
+  }
+}
+
+/* ── Auth tab ── */
+function setTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', (i === 0) === (mode === 'login'))
+  );
+  document.getElementById('nameField').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('authBtn').textContent = mode === 'login' ? '로그인' : '회원가입';
+  document.getElementById('authPw').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  document.getElementById('authErr').textContent = '';
+}
+
+async function submitAuth(e) {
+  e.preventDefault();
+  const btn = document.getElementById('authBtn');
+  const errEl = document.getElementById('authErr');
+  btn.disabled = true;
+  errEl.textContent = '';
+  try {
+    const email = document.getElementById('authEmail').value.trim();
+    const pw    = document.getElementById('authPw').value;
+    let data;
+    if (authMode === 'login') {
+      data = await api('POST', '/auth/login', { email, password: pw }, false);
+    } else {
+      const name = document.getElementById('authName').value.trim() || email.split('@')[0];
+      data = await api('POST', '/auth/register', { email, username: name, password: pw }, false);
+    }
+    token = data.access_token;
+    username = data.username;
+    localStorage.setItem('lq_token', token);
+    await enterApp();
+  } catch (err) {
+    errEl.textContent = err.message || '오류가 발생했습니다.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function logout() {
+  token = ''; username = ''; curConvId = null; localMsgs = []; convList = [];
+  localStorage.removeItem('lq_token');
+  document.getElementById('authView').classList.add('show');
+  document.getElementById('appView').classList.remove('show');
+  document.getElementById('authEmail').focus();
+}
+
+/* ── App entry ── */
+async function enterApp() {
+  document.getElementById('authView').classList.remove('show');
+  document.getElementById('appView').classList.add('show');
+  document.getElementById('userNameEl').textContent = username;
+  document.getElementById('userAv').textContent = username.charAt(0).toUpperCase();
+  await Promise.all([loadModels(), loadConvList()]);
+  showWelcome();
+  document.getElementById('userInput').focus();
+}
+
+/* ── API ── */
+async function api(method, path, body, auth = true) {
+  const h = { 'Content-Type': 'application/json' };
+  if (auth && token) h['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail || `HTTP ${r.status}`);
+  return d;
+}
+
+/* ── Models ── */
+async function loadModels() {
+  try {
+    const { models } = await api('GET', '/ollama/tags');
+    const sel = document.getElementById('modelSel');
+    if (!models?.length) { sel.innerHTML = '<option value="">모델 없음</option>'; setStatus(false, '모델 없음'); return; }
+    sel.innerHTML = models.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+    curModel = models[0].name;
+    setStatus(true, `연결됨 · ${models.length}개`);
+  } catch {
+    document.getElementById('modelSel').innerHTML = '<option value="">연결 실패</option>';
+    setStatus(false, 'Ollama 오프라인');
+  }
+}
+
+function setStatus(ok, txt) {
+  document.getElementById('statusDot').className = 'dot' + (ok ? ' on' : '');
+  document.getElementById('statusTxt').textContent = txt;
+}
+
+/* ── Conversations ── */
+async function loadConvList() {
+  try { convList = await api('GET', '/conversations'); renderHist(); } catch {}
+}
+
+async function loadConv(id) {
+  if (curConvId === id) return;
+  try {
+    const data = await api('GET', `/conversations/${id}`);
+    curConvId = id;
+    localMsgs = data.messages;
+    if (data.model) {
+      const opt = document.getElementById('modelSel').querySelector(`option[value="${data.model}"]`);
+      if (opt) { document.getElementById('modelSel').value = data.model; curModel = data.model; }
+    }
+    renderHist();
+    renderMsgs();
+  } catch {}
+}
+
+async function delConv(id, e) {
+  e.stopPropagation();
+  try {
+    await api('DELETE', `/conversations/${id}`);
+    convList = convList.filter(c => c.id !== id);
+    if (curConvId === id) { curConvId = null; localMsgs = []; showWelcome(); }
+    renderHist();
+  } catch {}
+}
+
+function renderHist() {
+  const el = document.getElementById('histList');
+  if (!convList.length) {
+    el.innerHTML = '<div class="hist-head">대화 기록</div><div style="font-size:12px;color:var(--muted);padding:4px 8px">기록 없음</div>';
+    return;
+  }
+  el.innerHTML = '<div class="hist-head">대화 기록</div>' + convList.map(c => `
+    <div class="hist-item${c.id === curConvId ? ' active' : ''}" onclick="loadConv(${c.id})">
+      <span class="hist-title">${esc(c.title)}</span>
+      <button class="hist-x" onclick="delConv(${c.id},event)">×</button>
+    </div>`).join('');
+}
+
+/* ── Welcome ── */
+const SUGGESTIONS = [
+  { icon: '💻', title: '코드 작성', hint: 'Python REST API\n서버 만드는 법 알려줘', prompt: 'Python으로 간단한 REST API 서버를 만드는 방법을 알려줘.' },
+  { icon: '🌐', title: '번역', hint: '영어 문장을\n자연스러운 한국어로', prompt: '다음 영어 문장을 자연스러운 한국어로 번역해줘:\n\n' },
+  { icon: '📋', title: '요약', hint: '긴 글을\n핵심만 정리해줘', prompt: '다음 내용을 요약해줘:\n\n' },
+  { icon: '🔍', title: '디버깅', hint: '코드 버그를 찾고\n수정 방법 제안해줘', prompt: '이 코드의 버그를 찾아서 수정해줘:\n\n```\n\n```' },
+];
+
+function showWelcome() {
+  document.getElementById('msgInner').innerHTML = `
+    <div class="welcome">
+      <div class="welcome-greeting">안녕하세요, ${esc(username.split(' ')[0])}님</div>
+      <div class="welcome-sub">오늘은 무엇을 도와드릴까요?</div>
+      <div class="welcome-grid">
+        ${SUGGESTIONS.map((s, i) => `
+          <button class="welcome-card" onclick="useCard(${i})">
+            <div class="card-icon">${s.icon}</div>
+            <div class="card-title">${s.title}</div>
+            <div class="card-hint">${s.hint.replace(/\n/g, '<br>')}</div>
+          </button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function useCard(idx) {
+  const ta = document.getElementById('userInput');
+  ta.value = SUGGESTIONS[idx].prompt;
+  onInput(ta);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+/* ── Render messages ── */
+function renderMsgs() {
+  document.getElementById('msgInner').innerHTML = localMsgs.map(buildMsgHtml).join('');
+  scrollDown();
+}
+
+function buildMsgHtml(m) {
+  const isUser = m.role === 'user';
+  const av = isUser ? username.charAt(0).toUpperCase() : 'Q';
+  const roleLabel = isUser ? '나' : '어시스턴트';
+  const body = isUser
+    ? `<div class="msg-body"><div class="user-bubble">${esc(m.content)}</div></div>`
+    : `<div class="msg-body asst-body">${marked.parse(m.content)}</div>`;
+  return `
+    <div class="msg">
+      <div class="msg-head">
+        <div class="msg-av ${m.role}">${esc(av)}</div>
+        <div class="msg-role">${roleLabel}</div>
+      </div>
+      ${body}
+    </div>`;
+}
+
+function appendMsg(role, content, isStreaming = false) {
+  const inner = document.getElementById('msgInner');
+  // Clear welcome if present
+  if (inner.querySelector('.welcome')) inner.innerHTML = '';
+
+  const div = document.createElement('div');
+  div.className = 'msg';
+  const av = role === 'user' ? username.charAt(0).toUpperCase() : 'Q';
+  const roleLabel = role === 'user' ? '나' : '어시스턴트';
+
+  let body;
+  if (isStreaming) {
+    body = `<div class="msg-body asst-body"><div class="thinking"><div class="dots"><span></span><span></span><span></span></div></div></div>`;
+  } else if (role === 'user') {
+    body = `<div class="msg-body"><div class="user-bubble">${esc(content)}</div></div>`;
+  } else {
+    body = `<div class="msg-body asst-body">${marked.parse(content)}</div>`;
+  }
+
+  div.innerHTML = `
+    <div class="msg-head">
+      <div class="msg-av ${role}">${esc(av)}</div>
+      <div class="msg-role">${roleLabel}</div>
+    </div>
+    ${body}`;
+  inner.appendChild(div);
+  scrollDown();
+  return div;
+}
+
+function updateStreaming(el, content) {
+  el.querySelector('.msg-body').className = 'msg-body asst-body';
+  el.querySelector('.msg-body').innerHTML = marked.parse(content);
+  scrollDown();
+}
+
+/* ── Send ── */
+async function send() {
+  const ta = document.getElementById('userInput');
+  const text = ta.value.trim();
+  if (!text || streaming || !curModel) return;
+
+  ta.value = '';
+  onInput(ta);
+
+  localMsgs.push({ role: 'user', content: text });
+  appendMsg('user', text);
+
+  const asstEl = appendMsg('assistant', '', true);
+
+  streaming = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  let acc = '';
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ conversation_id: curConvId, content: text, model: curModel }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const d = JSON.parse(line);
+          if (d.conversation_id && !curConvId) curConvId = d.conversation_id;
+          if (d.token) { acc += d.token; updateStreaming(asstEl, acc); }
+          if (d.error) throw new Error(d.error);
+          if (d.done) await loadConvList();
+        } catch {}
+      }
+    }
+  } catch (err) {
+    acc = `오류가 발생했습니다: ${err.message}`;
+    updateStreaming(asstEl, acc);
+  }
+
+  localMsgs.push({ role: 'assistant', content: acc });
+  streaming = false;
+  document.getElementById('sendBtn').disabled = false;
+  ta.focus();
+}
+
+function newChat() { curConvId = null; localMsgs = []; renderHist(); showWelcome(); document.getElementById('userInput').focus(); }
+
+/* ── Input helpers ── */
+function onKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!document.getElementById('sendBtn').disabled) send();
+  }
+}
+
+function onInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+  document.getElementById('sendBtn').disabled = !el.value.trim() || streaming;
+}
+
+/* ── Utils ── */
+function scrollDown() {
+  const el = document.getElementById('messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyCode(btn, code) {
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '복사됨!';
+    setTimeout(() => btn.textContent = '복사', 1800);
+  });
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+init();
+</script>
+</body>
+</html>

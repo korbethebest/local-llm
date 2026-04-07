@@ -1,0 +1,16 @@
+# 환경 변수 (절대 커밋 금지)
+.env
+
+# Electron 앱
+electron-app/node_modules/
+electron-app/dist/
+electron-app/assets/icon*.png
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 데이터베이스
+*.db
+*.sqlite

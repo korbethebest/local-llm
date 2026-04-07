@@ -1,0 +1,27 @@
+{
+  "name": "LocalQWEN",
+  "short_name": "LocalQWEN",
+  "description": "프라이빗 로컬 AI 어시스턴트",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "natural",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "ko"
+}

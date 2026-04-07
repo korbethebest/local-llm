@@ -1,0 +1,66 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: always
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - openwebui_data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_AUTH=true
+      - ENABLE_SIGNUP=true
+      - CORS_ALLOW_ORIGIN=*
+    depends_on:
+      - ollama
+    restart: always
+
+  app:
+    build: ./backend
+    container_name: local-qwen-app
+    ports:
+      - "3001:8000"
+    volumes:
+      - app_data:/app/data
+      - ./ui:/app/static:ro
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - STATIC_DIR=/app/static
+      - SECRET_KEY=change-this-to-a-random-secret-in-production
+      - DB_PATH=/app/data/db.sqlite
+    depends_on:
+      - ollama
+    restart: always
+
+  tunnel:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-tunnel
+    command: http --url=${NGROK_DOMAIN} app:8000
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    depends_on:
+      - app
+    restart: always
+
+volumes:
+  ollama_data:
+  openwebui_data:
+  app_data:
