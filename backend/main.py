@@ -56,6 +56,15 @@ class ChatBody(BaseModel):
     conversation_id: Optional[int] = None
     content: str = Field(min_length=1, max_length=50000)
     model: str
+    temperature: Optional[float] = Field(default=0.7, ge=0, le=2)
+    system_prompt: Optional[str] = Field(default="", max_length=5000)
+
+
+class RenameBody(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
+MAX_CONTEXT_MESSAGES = 40
 
 
 # ── Auth ──
@@ -132,6 +141,49 @@ def get_conversation(
     }
 
 
+@app.patch("/conversations/{conv_id}")
+def rename_conversation(
+    conv_id: int,
+    body: RenameBody,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conv_id, Conversation.user_id == user_id)
+        .first()
+    )
+    if not conv:
+        raise HTTPException(404)
+    conv.title = body.title.strip()
+    db.commit()
+    return {"ok": True, "title": conv.title}
+
+
+@app.get("/conversations/{conv_id}/export")
+def export_conversation(
+    conv_id: int,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conv_id, Conversation.user_id == user_id)
+        .first()
+    )
+    if not conv:
+        raise HTTPException(404)
+    return {
+        "title": conv.title,
+        "model": conv.model,
+        "created_at": conv.created_at.isoformat(),
+        "messages": [
+            {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat()}
+            for m in conv.messages
+        ],
+    }
+
+
 @app.delete("/conversations/{conv_id}")
 def delete_conversation(
     conv_id: int,
@@ -194,25 +246,33 @@ async def chat(
     conv.updated_at = datetime.utcnow()
     db.commit()
 
-    # Build full message history including new user message
-    history = [
-        {"role": m.role, "content": m.content}
-        for m in db.query(Message)
+    # Build message history with context window limit
+    all_msgs = (
+        db.query(Message)
         .filter(Message.conversation_id == conv.id)
         .order_by(Message.id)
         .all()
-    ]
+    )
+    history = [{"role": m.role, "content": m.content} for m in all_msgs[-MAX_CONTEXT_MESSAGES:]]
+    if body.system_prompt:
+        history.insert(0, {"role": "system", "content": body.system_prompt})
     conv_id = conv.id
 
     async def generate():
         accumulated = ""
         yield json.dumps({"conversation_id": conv_id}) + "\n"
         try:
+            ollama_payload = {
+                "model": body.model,
+                "messages": history,
+                "stream": True,
+                "options": {"temperature": body.temperature},
+            }
             async with httpx.AsyncClient(timeout=300) as client:
                 async with client.stream(
                     "POST",
                     f"{OLLAMA_URL}/api/chat",
-                    json={"model": body.model, "messages": history, "stream": True},
+                    json=ollama_payload,
                 ) as resp:
                     async for line in resp.aiter_lines():
                         if not line:

@@ -668,6 +668,138 @@
       margin-top: 8px;
     }
 
+    /* Settings panel */
+    .sb-settings {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--b1);
+    }
+
+    .sb-settings summary {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--muted);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sb-settings summary::before { content: '▸'; transition: transform 0.15s; }
+    .sb-settings[open] summary::before { transform: rotate(90deg); }
+
+    .sb-settings .settings-body { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+    .sb-settings label {
+      font-size: 11px;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sb-settings input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .sb-settings textarea {
+      width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--b1);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 12px;
+      padding: 6px 9px;
+      outline: none;
+      resize: vertical;
+      min-height: 48px;
+      max-height: 120px;
+      font-family: inherit;
+    }
+
+    .sb-settings textarea:focus { border-color: var(--accent2); }
+
+    /* History inline rename */
+    .hist-title-input {
+      background: var(--s3);
+      border: 1px solid var(--accent2);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 12.5px;
+      padding: 1px 4px;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    /* Export button */
+    .hist-export {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1;
+      padding: 0 2px;
+      flex-shrink: 0;
+      transition: color 0.1s, opacity 0.15s;
+    }
+
+    .hist-item:hover .hist-export { opacity: 1; }
+    .hist-export:hover { color: var(--accent); }
+
+    /* Mobile hamburger */
+    .btn-hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+      width: 36px; height: 36px;
+      background: var(--s2);
+      border: 1px solid var(--b1);
+      border-radius: 9px;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 49;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        z-index: 50;
+        height: 100vh;
+        transition: left 0.25s ease;
+      }
+
+      .sidebar.open { left: 0; }
+      .sidebar.open ~ .sidebar-overlay { display: block; }
+
+      .btn-hamburger { display: flex; }
+
+      .main { width: 100%; }
+
+      .msg-inner { padding: 40px 16px 16px; }
+      .input-area { padding: 10px 16px 16px; }
+
+      .welcome-grid { grid-template-columns: 1fr; }
+    }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -716,8 +848,15 @@
      APP VIEW
 ═══════════════════════════════ -->
 <div id="appView" class="view">
+  <button class="btn-hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sb-top">
       <div class="sb-brand">
         <div class="sb-mark">Q</div>
@@ -737,6 +876,22 @@
         <option value="">로딩 중...</option>
       </select>
     </div>
+
+    <details class="sb-settings">
+      <summary>설정</summary>
+      <div class="settings-body">
+        <div>
+          <label>Temperature <span id="tempVal">0.7</span></label>
+          <input type="range" id="tempSlider" min="0" max="2" step="0.1" value="0.7"
+            oninput="curTemp=parseFloat(this.value);document.getElementById('tempVal').textContent=this.value">
+        </div>
+        <div>
+          <label>시스템 프롬프트</label>
+          <textarea id="sysPrompt" placeholder="AI의 역할이나 규칙을 입력하세요..."
+            oninput="curSysPrompt=this.value"></textarea>
+        </div>
+      </div>
+    </details>
 
     <div class="sb-hist" id="histList">
       <div class="hist-head">대화 기록</div>
@@ -793,6 +948,8 @@ let localMsgs = [];
 let streaming = false;
 let authMode = 'login';
 let convList = [];
+let curTemp = 0.7;
+let curSysPrompt = '';
 
 /* ── Marked ── */
 const mdRenderer = new marked.Renderer();
@@ -945,9 +1102,49 @@ function renderHist() {
   }
   el.innerHTML = '<div class="hist-head">대화 기록</div>' + convList.map(c => `
     <div class="hist-item${c.id === curConvId ? ' active' : ''}" onclick="loadConv(${c.id})">
-      <span class="hist-title">${esc(c.title)}</span>
+      <span class="hist-title" ondblclick="startRename(${c.id},event)">${esc(c.title)}</span>
+      <button class="hist-export" onclick="exportConv(${c.id},event)" title="내보내기">↓</button>
       <button class="hist-x" onclick="delConv(${c.id},event)">×</button>
     </div>`).join('');
+}
+
+async function startRename(id, e) {
+  e.stopPropagation();
+  const span = e.target;
+  const conv = convList.find(c => c.id === id);
+  if (!conv) return;
+  const input = document.createElement('input');
+  input.className = 'hist-title-input';
+  input.value = conv.title;
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  const finish = async () => {
+    const newTitle = input.value.trim();
+    if (newTitle && newTitle !== conv.title) {
+      try {
+        await api('PATCH', `/conversations/${id}`, { title: newTitle });
+        conv.title = newTitle;
+      } catch {}
+    }
+    renderHist();
+  };
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { input.value = conv.title; input.blur(); } });
+}
+
+async function exportConv(id, e) {
+  e.stopPropagation();
+  try {
+    const data = await api('GET', `/conversations/${id}/export`);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.title.replace(/[^a-zA-Z0-9가-힣 ]/g, '')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {}
 }
 
 /* ── Welcome ── */
@@ -1064,7 +1261,7 @@ async function send() {
     const res = await fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ conversation_id: curConvId, content: text, model: curModel }),
+      body: JSON.stringify({ conversation_id: curConvId, content: text, model: curModel, temperature: curTemp, system_prompt: curSysPrompt }),
     });
 
     if (!res.ok) {
@@ -1129,6 +1326,11 @@ function scrollDown() {
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('open');
 }
 
 function copyCode(btn, code) {
