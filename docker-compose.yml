@@ -13,6 +13,11 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: always
 
   open-webui:
@@ -42,10 +47,17 @@ services:
     environment:
       - OLLAMA_URL=http://ollama:11434
       - STATIC_DIR=/app/static
-      - SECRET_KEY=change-this-to-a-random-secret-in-production
+      - SECRET_KEY=${SECRET_KEY:-}
+      - CORS_ORIGINS=http://localhost:3001,https://${NGROK_DOMAIN:-localhost}
       - DB_PATH=/app/data/db.sqlite
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: always
 
   tunnel:
@@ -57,7 +69,8 @@ services:
     ports:
       - "4040:4040"
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     restart: always
 
 volumes:

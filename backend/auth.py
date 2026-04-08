@@ -4,8 +4,14 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
+import secrets
+import logging
 
-SECRET_KEY = os.getenv("SECRET_KEY", "localqwen-default-secret-change-in-production")
+_default_key = os.getenv("SECRET_KEY", "")
+if not _default_key or _default_key == "change-this-to-a-random-secret-in-production":
+    _default_key = secrets.token_urlsafe(64)
+    logging.warning("SECRET_KEY가 설정되지 않아 임시 키를 생성했습니다. 서버 재시작 시 기존 토큰이 무효화됩니다.")
+SECRET_KEY = _default_key
 ALGORITHM = "HS256"
 EXPIRE_DAYS = 30
 

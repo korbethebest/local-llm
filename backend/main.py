@@ -2,25 +2,27 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 import httpx
 import json
 import os
+import logging
 
 from models import User, Conversation, Message, get_db, init_db, SessionLocal
 from auth import hash_password, verify_password, create_token, get_current_user_id
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 STATIC_DIR = os.getenv("STATIC_DIR", "/app/static")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3001").split(",")
 
-app = FastAPI(docs_url=None, redoc_url=None)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,22 +34,27 @@ def on_startup():
     init_db()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 # ── Schemas ──
 
 class RegisterBody(BaseModel):
-    email: str
-    username: str
-    password: str
+    email: EmailStr
+    username: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=8, max_length=128)
 
 
 class LoginBody(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 
 class ChatBody(BaseModel):
     conversation_id: Optional[int] = None
-    content: str
+    content: str = Field(min_length=1, max_length=50000)
     model: str
 
 
@@ -57,8 +64,6 @@ class ChatBody(BaseModel):
 def register(body: RegisterBody, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email.lower().strip()).first():
         raise HTTPException(400, "이미 사용 중인 이메일입니다.")
-    if len(body.password) < 6:
-        raise HTTPException(400, "비밀번호는 6자 이상이어야 합니다.")
     if not body.username.strip():
         raise HTTPException(400, "이름을 입력해주세요.")
     user = User(
@@ -237,7 +242,8 @@ async def chat(
                         except Exception:
                             pass
         except Exception as e:
-            yield json.dumps({"error": str(e)}) + "\n"
+            logging.error(f"Chat stream error: {e}")
+            yield json.dumps({"error": "응답 생성 중 오류가 발생했습니다."}) + "\n"
 
     return StreamingResponse(generate(), media_type="application/x-ndjson")
 
