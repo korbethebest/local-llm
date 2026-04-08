@@ -1,4 +1,4 @@
-const CACHE = 'localqwen-v1';
+const CACHE = 'localllm-v2';
 const APP_SHELL = ['/', '/icon.svg', '/manifest.json'];
 
 self.addEventListener('install', e => {

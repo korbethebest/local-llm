@@ -1,6 +1,6 @@
 {
-  "name": "LocalQWEN",
-  "short_name": "LocalQWEN",
+  "name": "LocalLLM",
+  "short_name": "LocalLLM",
   "description": "프라이빗 로컬 AI 어시스턴트",
   "start_url": "/",
   "scope": "/",

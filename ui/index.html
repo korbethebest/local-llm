@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LocalQWEN</title>
+  <title>LocalLLM</title>
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />
@@ -11,7 +11,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="LocalQWEN" />
+  <meta name="apple-mobile-web-app-title" content="LocalLLM" />
   <link rel="apple-touch-icon" href="/icon.svg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -814,8 +814,8 @@
 ═══════════════════════════════ -->
 <div id="authView" class="view show">
   <div class="auth-brand">
-    <div class="auth-mark">Q</div>
-    <div class="auth-name">LocalQWEN</div>
+    <div class="auth-mark">L</div>
+    <div class="auth-name">LocalLLM</div>
     <div class="auth-tagline">프라이빗 로컬 AI 어시스턴트</div>
   </div>
 
@@ -859,8 +859,8 @@
   <aside class="sidebar" id="sidebar">
     <div class="sb-top">
       <div class="sb-brand">
-        <div class="sb-mark">Q</div>
-        <div class="sb-brand-text">LocalQWEN</div>
+        <div class="sb-mark">L</div>
+        <div class="sb-brand-text">LocalLLM</div>
       </div>
       <button class="btn-new" onclick="newChat()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -1187,7 +1187,7 @@ function renderMsgs() {
 
 function buildMsgHtml(m) {
   const isUser = m.role === 'user';
-  const av = isUser ? username.charAt(0).toUpperCase() : 'Q';
+  const av = isUser ? username.charAt(0).toUpperCase() : 'L';
   const roleLabel = isUser ? '나' : '어시스턴트';
   const body = isUser
     ? `<div class="msg-body"><div class="user-bubble">${esc(m.content)}</div></div>`
@@ -1209,7 +1209,7 @@ function appendMsg(role, content, isStreaming = false) {
 
   const div = document.createElement('div');
   div.className = 'msg';
-  const av = role === 'user' ? username.charAt(0).toUpperCase() : 'Q';
+  const av = role === 'user' ? username.charAt(0).toUpperCase() : 'L';
   const roleLabel = role === 'user' ? '나' : '어시스턴트';
 
   let body;

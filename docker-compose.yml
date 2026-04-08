@@ -38,7 +38,7 @@ services:
 
   app:
     build: ./backend
-    container_name: local-qwen-app
+    container_name: local-llm-app
     ports:
       - "3001:8000"
     volumes:

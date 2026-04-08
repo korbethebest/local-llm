@@ -35,12 +35,12 @@ function drawIcon(size) {
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Letter Q
+  // Letter L
   ctx.fillStyle = 'white';
   ctx.font = `700 ${size * 0.58}px -apple-system, BlinkMacSystemFont, Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Q', size * 0.5, size * 0.52);
+  ctx.fillText('L', size * 0.5, size * 0.52);
 
   return canvas;
 }

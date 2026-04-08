@@ -34,7 +34,7 @@ function createWindow() {
     y: state.y,
     minWidth:  800,
     minHeight: 600,
-    title: 'LocalQWEN',
+    title: 'LocalLLM',
     icon: path.join(__dirname, 'assets', 'icon.png'),
     backgroundColor: '#09090b',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
@@ -113,7 +113,7 @@ function loadingHTML(url, attempt) {
     .dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
     @keyframes b{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:1}}
   </style></head><body>
-    <div class="mark">Q</div>
+    <div class="mark">L</div>
     <h2>서버에 연결 중...</h2>
     <p>서버 주소 <code>${url}</code><br>에 연결을 시도하고 있습니다. (${attempt}/12)</p>
     <div class="dots"><span></span><span></span><span></span></div>
@@ -135,7 +135,7 @@ function errorHTML(url) {
            font-size:13px;cursor:pointer;-webkit-app-region:no-drag;margin-top:4px}
     button:hover{background:#4f52d8}
   </style></head><body>
-    <div class="mark">Q</div>
+    <div class="mark">L</div>
     <h2>연결 실패</h2>
     <p>서버 주소 <code>${url}</code><br>에 연결할 수 없습니다.<br>Docker 컨테이너가 실행 중인지 확인하세요.</p>
     <button onclick="window.location.reload()">다시 시도</button>
