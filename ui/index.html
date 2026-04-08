@@ -1277,6 +1277,8 @@ async function submitAuth(e) {
     token = data.access_token;
     username = data.username;
     localStorage.setItem('lq_token', token);
+    const me = await api('GET', '/auth/me');
+    isAdmin = me.is_admin;
     await enterApp();
   } catch (err) {
     errEl.textContent = err.message || '오류가 발생했습니다.';
