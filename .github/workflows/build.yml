@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches: [main]
-  workflow_dispatch:        # 수동 실행 버튼
+  workflow_dispatch:
 
 jobs:
   build:
@@ -65,3 +65,48 @@ jobs:
             electron-app/dist/*.dmg
             electron-app/dist/*.AppImage
           retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 버전 읽기
+        id: version
+        run: echo "ver=$(node -p \"require('./electron-app/package.json').version\")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: 파일 정리
+        run: |
+          mkdir -p release
+          find artifacts -name '*.exe' -exec cp {} release/ \;
+          find artifacts -name '*.dmg' -exec cp {} release/ \;
+          find artifacts -name '*.AppImage' -exec cp {} release/ \;
+          ls -lh release/
+
+      - name: Release 생성/업데이트
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.ver }}
+          name: LocalLLM v${{ steps.version.outputs.ver }}
+          body: |
+            ## 다운로드
+
+            | 플랫폼 | 파일 |
+            |--------|------|
+            | Windows | `.exe` |
+            | macOS | `.dmg` |
+            | Linux | `.AppImage` |
+          files: release/*
+          make_latest: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

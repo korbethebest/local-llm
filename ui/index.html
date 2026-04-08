@@ -824,6 +824,103 @@
       .welcome-grid { grid-template-columns: 1fr; }
     }
 
+    /* Download modal */
+    .dl-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dl-overlay.show { display: flex; }
+
+    .dl-panel {
+      background: var(--s1);
+      border: 1px solid var(--b1);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 480px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .dl-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .dl-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .dl-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border: 1px solid var(--b1);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      transition: border-color 0.12s;
+    }
+
+    .dl-item:hover { border-color: var(--b2); }
+
+    .dl-item-info { display: flex; align-items: center; gap: 12px; }
+
+    .dl-item-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--s3);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .dl-item-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .dl-item-size {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .dl-btn {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 7px 16px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+
+    .dl-btn:hover { opacity: 0.9; }
+
+    .dl-version {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 14px;
+    }
+
     /* Admin panel */
     .admin-overlay {
       display: none;
@@ -1114,6 +1211,12 @@
         </svg>
         새 대화
       </button>
+      <button class="btn-new" onclick="openDownloads()" style="background:none;border:1px solid var(--b1);color:var(--dim)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        데스크탑 앱 다운로드
+      </button>
     </div>
 
     <div class="sb-model">
@@ -1187,6 +1290,17 @@
       <div class="input-hint">Enter 전송 &nbsp;·&nbsp; Shift+Enter 줄바꿈</div>
     </div>
   </main>
+</div>
+
+<!-- Download Modal -->
+<div class="dl-overlay" id="dlOverlay" onclick="if(event.target===this)closeDl()">
+  <div class="dl-panel">
+    <div class="dl-header">
+      <h2>데스크탑 앱 다운로드</h2>
+      <button class="admin-close" onclick="closeDl()">×</button>
+    </div>
+    <div id="dlContent"><div style="color:var(--muted);text-align:center;padding:20px">불러오는 중...</div></div>
+  </div>
 </div>
 
 <!-- Admin Panel -->
@@ -1628,6 +1742,33 @@ function copyMsgFromEl(btn) {
     setTimeout(() => { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사'; }, 1800);
   });
 }
+
+/* ── Downloads ── */
+async function openDownloads() {
+  document.getElementById('dlOverlay').classList.add('show');
+  const el = document.getElementById('dlContent');
+  try {
+    const res = await fetch('https://api.github.com/repos/korbethebest/local-llm/releases/latest');
+    if (!res.ok) throw new Error('릴리즈를 찾을 수 없습니다.');
+    const release = await res.json();
+    const platforms = [
+      { name: 'Windows', icon: '🪟', ext: '.exe' },
+      { name: 'macOS', icon: '🍎', ext: '.dmg' },
+      { name: 'Linux', icon: '🐧', ext: '.AppImage' },
+    ];
+    const items = platforms.map(p => {
+      const asset = release.assets.find(a => a.name.endsWith(p.ext));
+      if (!asset) return `<div class="dl-item"><div class="dl-item-info"><div class="dl-item-icon">${p.icon}</div><div><div class="dl-item-name">${p.name}</div><div class="dl-item-size">빌드 없음</div></div></div></div>`;
+      const size = (asset.size / 1024 / 1024).toFixed(1) + ' MB';
+      return `<div class="dl-item"><div class="dl-item-info"><div class="dl-item-icon">${p.icon}</div><div><div class="dl-item-name">${p.name}</div><div class="dl-item-size">${asset.name} · ${size}</div></div></div><a class="dl-btn" href="${asset.browser_download_url}" target="_blank">다운로드</a></div>`;
+    }).join('');
+    el.innerHTML = items + `<div class="dl-version">${esc(release.name)} · ${new Date(release.published_at).toLocaleDateString('ko')}</div>`;
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px">${e.message}<br><a href="https://github.com/korbethebest/local-llm/releases" target="_blank" style="color:var(--accent);font-size:13px">GitHub Releases에서 직접 확인</a></div>`;
+  }
+}
+
+function closeDl() { document.getElementById('dlOverlay').classList.remove('show'); }
 
 /* ── Admin ── */
 let adminUsers = [];
