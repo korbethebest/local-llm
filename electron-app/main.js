@@ -66,7 +66,9 @@ function createWindow() {
 function tryLoad(attempt = 1) {
   checkServer(config.serverUrl, ok => {
     if (ok) {
-      mainWindow.loadURL(config.serverUrl);
+      mainWindow.loadURL(config.serverUrl, {
+        extraHeaders: 'ngrok-skip-browser-warning: true'
+      });
     } else if (attempt <= 12) {
       // Retry up to ~60s
       showLoading(attempt);
@@ -79,8 +81,16 @@ function tryLoad(attempt = 1) {
 
 function checkServer(url, cb) {
   const mod = url.startsWith('https') ? https : http;
+  const parsed = new URL(url);
+  const opts = {
+    hostname: parsed.hostname,
+    port: parsed.port,
+    path: parsed.pathname,
+    timeout: 4000,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  };
   try {
-    const req = mod.get(url, { timeout: 4000 }, res => cb(res.statusCode < 500));
+    const req = mod.get(opts, res => cb(res.statusCode < 500));
     req.on('error', () => cb(false));
     req.on('timeout', () => { req.destroy(); cb(false); });
   } catch { cb(false); }
