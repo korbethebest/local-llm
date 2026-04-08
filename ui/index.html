@@ -512,23 +512,29 @@
       color: var(--muted);
     }
 
-    .btn-copy-msg {
-      margin-left: auto;
+    .msg-actions {
+      padding-left: 35px;
+      margin-top: 8px;
       opacity: 0;
-      background: none;
-      border: 1px solid var(--b1);
-      border-radius: 6px;
-      color: var(--muted);
-      font-size: 11px;
-      padding: 3px 8px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+      transition: opacity 0.15s;
     }
 
-    .msg:hover .btn-copy-msg { opacity: 1; }
-    .btn-copy-msg:hover { color: var(--text); border-color: var(--b2); }
+    .msg:hover .msg-actions { opacity: 1; }
+
+    .btn-copy-msg {
+      background: none;
+      border: 1px solid var(--b2);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 11.5px;
+      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-copy-msg:hover { background: var(--s3); border-color: var(--accent2); }
 
     .msg-body { padding-left: 35px; }
 
@@ -1207,18 +1213,18 @@ function buildMsgHtml(m, idx) {
   const isUser = m.role === 'user';
   const av = isUser ? username.charAt(0).toUpperCase() : 'L';
   const roleLabel = isUser ? '나' : '어시스턴트';
-  const copyBtn = !isUser ? `<button class="btn-copy-msg" onclick="copyMsg(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사</button>` : '';
   const body = isUser
     ? `<div class="msg-body"><div class="user-bubble">${esc(m.content)}</div></div>`
     : `<div class="msg-body asst-body">${marked.parse(m.content)}</div>`;
+  const actions = !isUser ? `<div class="msg-actions"><button class="btn-copy-msg" onclick="copyMsg(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사</button></div>` : '';
   return `
     <div class="msg">
       <div class="msg-head">
         <div class="msg-av ${m.role}">${esc(av)}</div>
         <div class="msg-role">${roleLabel}</div>
-        ${copyBtn}
       </div>
       ${body}
+      ${actions}
     </div>`;
 }
 
@@ -1241,14 +1247,14 @@ function appendMsg(role, content, isStreaming = false) {
     body = `<div class="msg-body asst-body">${marked.parse(content)}</div>`;
   }
 
-  const copyBtn = role === 'assistant' ? `<button class="btn-copy-msg" onclick="copyMsgFromEl(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사</button>` : '';
+  const actions = role === 'assistant' ? `<div class="msg-actions"><button class="btn-copy-msg" onclick="copyMsgFromEl(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사</button></div>` : '';
   div.innerHTML = `
     <div class="msg-head">
       <div class="msg-av ${role}">${esc(av)}</div>
       <div class="msg-role">${roleLabel}</div>
-      ${copyBtn}
     </div>
-    ${body}`;
+    ${body}
+    ${actions}`;
   inner.appendChild(div);
   scrollDown();
   return div;
