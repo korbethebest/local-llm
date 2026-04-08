@@ -61,7 +61,7 @@ jobs:
         with:
           name: LocalLLM-${{ matrix.name }}
           path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
+            electron-app/dist/*.exe
+            electron-app/dist/*.dmg
+            electron-app/dist/*.AppImage
           retention-days: 30
