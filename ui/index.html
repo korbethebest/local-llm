@@ -824,6 +824,115 @@
       .welcome-grid { grid-template-columns: 1fr; }
     }
 
+    /* Admin panel */
+    .admin-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .admin-overlay.show { display: flex; }
+
+    .admin-panel {
+      background: var(--s1);
+      border: 1px solid var(--b1);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .admin-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .admin-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .admin-close:hover { color: var(--text); background: var(--s3); }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .admin-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--b1);
+    }
+
+    .admin-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--dim);
+    }
+
+    .admin-table tr:hover td { background: var(--s2); }
+
+    .badge-admin {
+      background: rgba(99,102,241,0.15);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .badge-user {
+      background: var(--s3);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .admin-actions { display: flex; gap: 6px; }
+
+    .admin-btn {
+      background: none;
+      border: 1px solid var(--b1);
+      border-radius: 6px;
+      color: var(--dim);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .admin-btn:hover { color: var(--text); border-color: var(--b2); background: var(--s3); }
+    .admin-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -930,6 +1039,11 @@
           <span id="statusTxt">연결 중...</span>
         </div>
       </div>
+      <button class="btn-logout" id="adminBtn" onclick="openAdmin()" title="관리자" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 15c-3.87 0-7 1.57-7 3.5V21h14v-2.5c0-1.93-3.13-3.5-7-3.5z"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
       <button class="btn-logout" onclick="logout()" title="로그아웃">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -962,6 +1076,22 @@
   </main>
 </div>
 
+<!-- Admin Panel -->
+<div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>사용자 관리</h2>
+      <button class="admin-close" onclick="closeAdmin()">×</button>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr><th>이름</th><th>이메일</th><th>역할</th><th>대화</th><th>가입일</th><th></th></tr>
+      </thead>
+      <tbody id="adminBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 /* ── State ── */
 let token = localStorage.getItem('lq_token') || '';
@@ -974,6 +1104,7 @@ let authMode = 'login';
 let convList = [];
 let curTemp = 0.7;
 let curSysPrompt = '';
+let isAdmin = false;
 
 /* ── Marked ── */
 const mdRenderer = new marked.Renderer();
@@ -992,6 +1123,7 @@ async function init() {
     try {
       const me = await api('GET', '/auth/me');
       username = me.username;
+      isAdmin = me.is_admin;
       await enterApp();
     } catch {
       token = '';
@@ -1053,6 +1185,7 @@ async function enterApp() {
   document.getElementById('appView').classList.add('show');
   document.getElementById('userNameEl').textContent = username;
   document.getElementById('userAv').textContent = username.charAt(0).toUpperCase();
+  document.getElementById('adminBtn').style.display = isAdmin ? '' : 'none';
   await Promise.all([loadModels(), loadConvList()]);
   showWelcome();
   document.getElementById('userInput').focus();
@@ -1373,6 +1506,47 @@ function copyMsgFromEl(btn) {
     btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>복사됨!';
     setTimeout(() => { btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사'; }, 1800);
   });
+}
+
+/* ── Admin ── */
+async function openAdmin() {
+  const overlay = document.getElementById('adminOverlay');
+  overlay.classList.add('show');
+  try {
+    const users = await api('GET', '/admin/users');
+    const body = document.getElementById('adminBody');
+    body.innerHTML = users.map(u => `
+      <tr>
+        <td style="color:var(--text);font-weight:500">${esc(u.username)}</td>
+        <td>${esc(u.email)}</td>
+        <td><span class="${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? '관리자' : '사용자'}</span></td>
+        <td>${u.conversation_count}</td>
+        <td>${new Date(u.created_at).toLocaleDateString('ko')}</td>
+        <td class="admin-actions">
+          <button class="admin-btn" onclick="toggleAdmin(${u.id},${!u.is_admin})">${u.is_admin ? '권한 해제' : '관리자 지정'}</button>
+          <button class="admin-btn danger" onclick="deleteUser(${u.id},'${esc(u.username)}')">삭제</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    document.getElementById('adminBody').innerHTML = `<tr><td colspan="6" style="color:var(--danger);text-align:center">${e.message}</td></tr>`;
+  }
+}
+
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('show'); }
+
+async function toggleAdmin(uid, makeAdmin) {
+  try {
+    await api('PATCH', `/admin/users/${uid}`, { is_admin: makeAdmin });
+    await openAdmin();
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteUser(uid, name) {
+  if (!confirm(`"${name}" 사용자를 삭제하시겠습니까?\n모든 대화 내역도 함께 삭제됩니다.`)) return;
+  try {
+    await api('DELETE', `/admin/users/${uid}`);
+    await openAdmin();
+  } catch (e) { alert(e.message); }
 }
 
 function toggleSidebar() {

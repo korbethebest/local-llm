@@ -99,7 +99,68 @@ def me(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(404)
-    return {"id": user.id, "email": user.email, "username": user.username}
+    return {"id": user.id, "email": user.email, "username": user.username, "is_admin": user.is_admin}
+
+
+# ── Admin ──
+
+def require_admin(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or not user.is_admin:
+        raise HTTPException(403, "관리자 권한이 필요합니다.")
+    return user_id
+
+
+@app.get("/admin/users")
+def admin_list_users(admin_id: int = Depends(require_admin), db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.id).all()
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "username": u.username,
+            "is_admin": u.is_admin,
+            "created_at": u.created_at.isoformat(),
+            "conversation_count": len(u.conversations),
+        }
+        for u in users
+    ]
+
+
+class AdminUpdateBody(BaseModel):
+    is_admin: Optional[bool] = None
+
+
+@app.patch("/admin/users/{uid}")
+def admin_update_user(
+    uid: int,
+    body: AdminUpdateBody,
+    admin_id: int = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == uid).first()
+    if not user:
+        raise HTTPException(404, "사용자를 찾을 수 없습니다.")
+    if body.is_admin is not None:
+        user.is_admin = body.is_admin
+    db.commit()
+    return {"ok": True}
+
+
+@app.delete("/admin/users/{uid}")
+def admin_delete_user(
+    uid: int,
+    admin_id: int = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if uid == admin_id:
+        raise HTTPException(400, "자기 자신은 삭제할 수 없습니다.")
+    user = db.query(User).filter(User.id == uid).first()
+    if not user:
+        raise HTTPException(404, "사용자를 찾을 수 없습니다.")
+    db.delete(user)
+    db.commit()
+    return {"ok": True}
 
 
 # ── Conversations ──
