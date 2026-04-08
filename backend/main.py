@@ -163,6 +163,56 @@ def admin_delete_user(
     return {"ok": True}
 
 
+@app.get("/admin/users/{uid}/conversations")
+def admin_user_conversations(
+    uid: int,
+    admin_id: int = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == uid).first()
+    if not user:
+        raise HTTPException(404, "사용자를 찾을 수 없습니다.")
+    convs = (
+        db.query(Conversation)
+        .filter(Conversation.user_id == uid)
+        .order_by(Conversation.updated_at.desc())
+        .all()
+    )
+    return {
+        "username": user.username,
+        "conversations": [
+            {
+                "id": c.id,
+                "title": c.title,
+                "model": c.model,
+                "message_count": len(c.messages),
+                "updated_at": c.updated_at.isoformat(),
+            }
+            for c in convs
+        ],
+    }
+
+
+@app.get("/admin/conversations/{conv_id}")
+def admin_get_conversation(
+    conv_id: int,
+    admin_id: int = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+    if not conv:
+        raise HTTPException(404)
+    return {
+        "title": conv.title,
+        "model": conv.model,
+        "username": conv.user.username,
+        "messages": [
+            {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat()}
+            for m in conv.messages
+        ],
+    }
+
+
 # ── Conversations ──
 
 @app.get("/conversations")

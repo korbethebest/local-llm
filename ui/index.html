@@ -841,11 +841,12 @@
       background: var(--s1);
       border: 1px solid var(--b1);
       border-radius: 16px;
-      width: 90%;
-      max-width: 600px;
-      max-height: 80vh;
-      overflow-y: auto;
-      padding: 24px;
+      width: 95%;
+      max-width: 900px;
+      height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
 
@@ -853,13 +854,41 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--b1);
+      flex-shrink: 0;
     }
 
     .admin-header h2 {
       font-size: 18px;
       font-weight: 600;
       color: var(--text);
+    }
+
+    .admin-nav {
+      display: flex;
+      gap: 2px;
+      background: var(--s3);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .admin-nav button {
+      padding: 6px 14px;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .admin-nav button.active {
+      background: var(--s2);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
     }
 
     .admin-close {
@@ -873,6 +902,12 @@
     }
 
     .admin-close:hover { color: var(--text); background: var(--s3); }
+
+    .admin-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 24px 24px;
+    }
 
     .admin-table {
       width: 100%;
@@ -889,6 +924,9 @@
       color: var(--muted);
       padding: 8px 10px;
       border-bottom: 1px solid var(--b1);
+      position: sticky;
+      top: 0;
+      background: var(--s1);
     }
 
     .admin-table td {
@@ -917,7 +955,7 @@
       border-radius: 4px;
     }
 
-    .admin-actions { display: flex; gap: 6px; }
+    .admin-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
     .admin-btn {
       background: none;
@@ -932,6 +970,81 @@
 
     .admin-btn:hover { color: var(--text); border-color: var(--b2); background: var(--s3); }
     .admin-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+    .admin-btn.primary { border-color: var(--accent2); color: var(--accent); }
+    .admin-btn.primary:hover { background: rgba(99,102,241,0.1); }
+
+    /* Conversation viewer */
+    .conv-viewer-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 16px;
+    }
+
+    .conv-viewer-back:hover { text-decoration: underline; }
+
+    .conv-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid var(--b1);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      transition: background 0.1s;
+      cursor: pointer;
+    }
+
+    .conv-list-item:hover { background: var(--s2); }
+
+    .conv-list-title {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-right: 12px;
+    }
+
+    .conv-list-meta {
+      font-size: 11px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .conv-viewer-msg {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .conv-viewer-msg:last-child { border-bottom: none; }
+
+    .conv-viewer-role {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .conv-viewer-role.user { color: var(--accent); }
+
+    .conv-viewer-content {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--dim);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
@@ -1080,15 +1193,16 @@
 <div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
   <div class="admin-panel">
     <div class="admin-header">
-      <h2>사용자 관리</h2>
-      <button class="admin-close" onclick="closeAdmin()">×</button>
+      <h2 id="adminTitle">사용자 관리</h2>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="admin-nav" id="adminNav">
+          <button class="active" onclick="adminTab('users')">사용자</button>
+          <button onclick="adminTab('convs')">대화 내역</button>
+        </div>
+        <button class="admin-close" onclick="closeAdmin()">×</button>
+      </div>
     </div>
-    <table class="admin-table">
-      <thead>
-        <tr><th>이름</th><th>이메일</th><th>역할</th><th>대화</th><th>가입일</th><th></th></tr>
-      </thead>
-      <tbody id="adminBody"></tbody>
-    </table>
+    <div class="admin-content" id="adminContent"></div>
   </div>
 </div>
 
@@ -1509,44 +1623,103 @@ function copyMsgFromEl(btn) {
 }
 
 /* ── Admin ── */
+let adminUsers = [];
+let adminCurrentTab = 'users';
+
 async function openAdmin() {
-  const overlay = document.getElementById('adminOverlay');
-  overlay.classList.add('show');
-  try {
-    const users = await api('GET', '/admin/users');
-    const body = document.getElementById('adminBody');
-    body.innerHTML = users.map(u => `
-      <tr>
-        <td style="color:var(--text);font-weight:500">${esc(u.username)}</td>
-        <td>${esc(u.email)}</td>
-        <td><span class="${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? '관리자' : '사용자'}</span></td>
-        <td>${u.conversation_count}</td>
-        <td>${new Date(u.created_at).toLocaleDateString('ko')}</td>
-        <td class="admin-actions">
-          <button class="admin-btn" onclick="toggleAdmin(${u.id},${!u.is_admin})">${u.is_admin ? '권한 해제' : '관리자 지정'}</button>
-          <button class="admin-btn danger" onclick="deleteUser(${u.id},'${esc(u.username)}')">삭제</button>
-        </td>
-      </tr>`).join('');
-  } catch (e) {
-    document.getElementById('adminBody').innerHTML = `<tr><td colspan="6" style="color:var(--danger);text-align:center">${e.message}</td></tr>`;
-  }
+  document.getElementById('adminOverlay').classList.add('show');
+  adminTab('users');
 }
 
 function closeAdmin() { document.getElementById('adminOverlay').classList.remove('show'); }
 
-async function toggleAdmin(uid, makeAdmin) {
+function adminTab(tab) {
+  adminCurrentTab = tab;
+  document.querySelectorAll('#adminNav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#adminNav button').forEach(b => { if ((tab === 'users' && b.textContent === '사용자') || (tab === 'convs' && b.textContent === '대화 내역')) b.classList.add('active'); });
+  if (tab === 'users') loadAdminUsers();
+  else if (tab === 'convs') loadAdminConvUsers();
+}
+
+async function loadAdminUsers() {
+  const el = document.getElementById('adminContent');
   try {
-    await api('PATCH', `/admin/users/${uid}`, { is_admin: makeAdmin });
-    await openAdmin();
-  } catch (e) { alert(e.message); }
+    adminUsers = await api('GET', '/admin/users');
+    el.innerHTML = `<table class="admin-table">
+      <thead><tr><th>이름</th><th>이메일</th><th>역할</th><th>대화</th><th>가입일</th><th></th></tr></thead>
+      <tbody>${adminUsers.map(u => `
+        <tr>
+          <td style="color:var(--text);font-weight:500">${esc(u.username)}</td>
+          <td>${esc(u.email)}</td>
+          <td><span class="${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? '관리자' : '사용자'}</span></td>
+          <td>${u.conversation_count}</td>
+          <td>${new Date(u.created_at).toLocaleDateString('ko')}</td>
+          <td class="admin-actions">
+            <button class="admin-btn" onclick="toggleAdminRole(${u.id},${!u.is_admin})">${u.is_admin ? '권한 해제' : '관리자 지정'}</button>
+            <button class="admin-btn danger" onclick="deleteUser(${u.id},'${esc(u.username)}')">삭제</button>
+          </td>
+        </tr>`).join('')}</tbody></table>`;
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--danger);text-align:center;padding:40px">${e.message}</div>`;
+  }
+}
+
+async function loadAdminConvUsers() {
+  const el = document.getElementById('adminContent');
+  try {
+    if (!adminUsers.length) adminUsers = await api('GET', '/admin/users');
+    el.innerHTML = adminUsers.map(u => `
+      <div class="conv-list-item" onclick="loadAdminUserConvs(${u.id})">
+        <span class="conv-list-title">${esc(u.username)} <span style="color:var(--muted);font-weight:400">(${esc(u.email)})</span></span>
+        <span class="conv-list-meta">${u.conversation_count}개 대화</span>
+      </div>`).join('') || '<div style="color:var(--muted);text-align:center;padding:40px">사용자가 없습니다.</div>';
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--danger);text-align:center;padding:40px">${e.message}</div>`;
+  }
+}
+
+async function loadAdminUserConvs(uid) {
+  const el = document.getElementById('adminContent');
+  try {
+    const data = await api('GET', `/admin/users/${uid}/conversations`);
+    el.innerHTML = `
+      <button class="conv-viewer-back" onclick="loadAdminConvUsers()">← 사용자 목록</button>
+      <h3 style="color:var(--text);font-size:15px;margin-bottom:14px">${esc(data.username)}님의 대화 (${data.conversations.length}개)</h3>
+      ${data.conversations.length ? data.conversations.map(c => `
+        <div class="conv-list-item" onclick="loadAdminConvDetail(${c.id})">
+          <span class="conv-list-title">${esc(c.title)}</span>
+          <span class="conv-list-meta">${c.message_count}개 메시지 · ${c.model} · ${new Date(c.updated_at).toLocaleDateString('ko')}</span>
+        </div>`).join('') : '<div style="color:var(--muted);padding:20px;text-align:center">대화 기록 없음</div>'}`;
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--danger);text-align:center;padding:40px">${e.message}</div>`;
+  }
+}
+
+async function loadAdminConvDetail(convId) {
+  const el = document.getElementById('adminContent');
+  try {
+    const data = await api('GET', `/admin/conversations/${convId}`);
+    el.innerHTML = `
+      <button class="conv-viewer-back" onclick="history.state?.uid ? loadAdminUserConvs(history.state.uid) : loadAdminConvUsers()">← 뒤로</button>
+      <h3 style="color:var(--text);font-size:15px;margin-bottom:4px">${esc(data.title)}</h3>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:16px">${esc(data.username)} · ${esc(data.model)} · ${data.messages.length}개 메시지</div>
+      ${data.messages.map(m => `
+        <div class="conv-viewer-msg">
+          <div class="conv-viewer-role ${m.role}">${m.role === 'user' ? '사용자' : '어시스턴트'}</div>
+          <div class="conv-viewer-content">${m.role === 'assistant' ? marked.parse(m.content) : esc(m.content)}</div>
+        </div>`).join('')}`;
+  } catch (e) {
+    el.innerHTML = `<div style="color:var(--danger);text-align:center;padding:40px">${e.message}</div>`;
+  }
+}
+
+async function toggleAdminRole(uid, makeAdmin) {
+  try { await api('PATCH', `/admin/users/${uid}`, { is_admin: makeAdmin }); loadAdminUsers(); } catch (e) { alert(e.message); }
 }
 
 async function deleteUser(uid, name) {
   if (!confirm(`"${name}" 사용자를 삭제하시겠습니까?\n모든 대화 내역도 함께 삭제됩니다.`)) return;
-  try {
-    await api('DELETE', `/admin/users/${uid}`);
-    await openAdmin();
-  } catch (e) { alert(e.message); }
+  try { await api('DELETE', `/admin/users/${uid}`); adminUsers = []; loadAdminUsers(); } catch (e) { alert(e.message); }
 }
 
 function toggleSidebar() {
